@@ -282,9 +282,11 @@ func (ospkg *OSPackage) unzip() error {
 		return fmt.Errorf("unzip initramfs failed: %v", err)
 	}
 	// tboot
-	ospkg.tboot, err = unzipFile(archive, ospkg.manifest.TbootPath)
-	if err != nil {
-		return fmt.Errorf("unzip tboot failed: %v", err)
+	if ospkg.manifest.TbootPath != "" {
+		ospkg.tboot, err = unzipFile(archive, ospkg.manifest.TbootPath)
+		if err != nil {
+			return fmt.Errorf("unzip tboot failed: %v", err)
+		}
 	}
 	// ACMs
 	if len(ospkg.manifest.ACMPaths) > 0 {
