@@ -155,11 +155,15 @@ func findNetworkInterfaces() ([]netlink.Link, error) {
 	return links, nil
 }
 
-func download(url *url.URL, httpsRoots *x509.CertPool) ([]byte, error) {
+func download(url *url.URL, httpsRoots *x509.CertPool, insecure bool) ([]byte, error) {
 	// setup client with values taken from http.DefaultTransport + RootCAs
 	tls := &tls.Config{
 		RootCAs: httpsRoots,
 	}
+	if insecure {
+		tls.InsecureSkipVerify = true
+	}
+
 	client := http.Client{
 		Transport: (&http.Transport{
 			Proxy: http.ProxyFromEnvironment,

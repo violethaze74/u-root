@@ -31,11 +31,11 @@ import (
 
 // Flags
 var (
-	doDebug = flag.Bool("debug", false, "Print additional debug output")
-	klog    = flag.Bool("klog", false, "Print output to all attached consoles via the kernel log")
-	dryRun  = flag.Bool("dryrun", false, "Do everything except booting the loaded kernel")
+	doDebug       = flag.Bool("debug", false, "Print additional debug output")
+	klog          = flag.Bool("klog", false, "Print output to all attached consoles via the kernel log")
+	dryRun        = flag.Bool("dryrun", false, "Do everything except booting the loaded kernel")
+	tlsSkipVerify = flag.Bool("tlsskipverify", false, "Controls whether a client verifies the provisioning server's HTTPS certificate chain and host name")
 )
-
 var debug = func(string, ...interface{}) {}
 
 // Files at initramfs
@@ -122,7 +122,11 @@ func main() {
 	if securityConfig.BootMode == Network {
 		httpsRoots, err = loadHTTPSRoots(httpsRootsFile)
 		if err != nil {
-			reboot("load HTTPS roots: %v", err)
+			if *tlsSkipVerify {
+				info("WARNING: failed to load HTTPS roots. Ignore it as tlsSkipVerify flag is set")
+			} else {
+				reboot("load HTTPS roots: %v", err)
+			}
 		}
 	}
 
@@ -213,7 +217,10 @@ func main() {
 		if err != nil {
 			reboot("parse provisioning URLs: %v", err)
 		}
-		s, err := networkLoad(provUrls, securityConfig.UsePkgCache, httpsRoots)
+		if *tlsSkipVerify {
+			info("WARNING: insecure tlsSkipVerify flag is set. HTTPS has no effect!")
+		}
+		s, err := networkLoad(provUrls, securityConfig.UsePkgCache, httpsRoots, *tlsSkipVerify)
 		if err != nil {
 			reboot("load OS package via network: %v", err)
 		}
@@ -409,7 +416,7 @@ func markCurrentOSpkg(pkgPath string) {
 	}
 }
 
-func networkLoad(urls []*url.URL, useCache bool, httpsRoots []*x509.Certificate) (*ospkgSampl, error) {
+func networkLoad(urls []*url.URL, useCache bool, httpsRoots []*x509.Certificate, insecure bool) (*ospkgSampl, error) {
 	var sample ospkgSampl
 	if *doDebug {
 		info("Provisioning URLs:")
@@ -428,7 +435,7 @@ func networkLoad(urls []*url.URL, useCache bool, httpsRoots []*x509.Certificate)
 
 	for _, url := range urls {
 		debug("downloading %s", url.String())
-		dBytes, err := download(url, roots)
+		dBytes, err := download(url, roots, insecure)
 		if err != nil {
 			debug("Skip %s: %v", url.String(), err)
 			continue
@@ -498,7 +505,7 @@ func networkLoad(urls []*url.URL, useCache bool, httpsRoots []*x509.Certificate)
 		}
 		if aBytes == nil {
 			debug("downloading %s", pkgURL.String())
-			aBytes, err = download(pkgURL, roots)
+			aBytes, err = download(pkgURL, roots, insecure)
 			if err != nil {
 				debug("Skip %s: %v", url.String(), err)
 				continue
