@@ -122,11 +122,7 @@ func main() {
 	if securityConfig.BootMode == Network {
 		httpsRoots, err = loadHTTPSRoots(httpsRootsFile)
 		if err != nil {
-			if *tlsSkipVerify {
-				info("WARNING: failed to load HTTPS roots. Ignore it as tlsSkipVerify flag is set")
-			} else {
-				reboot("load HTTPS roots: %v", err)
-			}
+			reboot("load HTTPS roots: %v", err)
 		}
 	}
 
@@ -218,7 +214,7 @@ func main() {
 			reboot("parse provisioning URLs: %v", err)
 		}
 		if *tlsSkipVerify {
-			info("WARNING: insecure tlsSkipVerify flag is set. HTTPS has no effect!")
+			info("WARNING: insecure tlsSkipVerify flag is set. HTTPS certificate verification is not performed!")
 		}
 		s, err := networkLoad(provUrls, securityConfig.UsePkgCache, httpsRoots, *tlsSkipVerify)
 		if err != nil {
