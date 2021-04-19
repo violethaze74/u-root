@@ -39,7 +39,6 @@ type HostConfig struct {
 	ProvisioningURLs []string    `json:"provisioning_urls"`
 	ID               string      `json:"identity"`
 	Auth             string      `json:"authentication"`
-	EntropySeed      string      `json:"entropy_seed"`
 
 	isValidBasic   bool
 	isValidNetwork bool
@@ -47,7 +46,6 @@ type HostConfig struct {
 	hostIP           *netlink.Addr
 	defaultGateway   *netlink.Addr
 	provisioningURLs []*url.URL
-	entropySeed      [32]byte
 }
 
 // Validate checks the integrety of hc. network controlls, if the
@@ -58,12 +56,6 @@ func (hc *HostConfig) Validate(network bool) error {
 		if hc.Version != HostConfigVersion {
 			return fmt.Errorf("version missmatch, want %d, got %d", HostConfigVersion, hc.Version)
 		}
-		// entropy seed
-		e, err := hex.DecodeString(hc.EntropySeed)
-		if err != nil || len(e) != 32 {
-			return fmt.Errorf("entropy seed: 32 hex-encoded bytes expected")
-		}
-		copy(hc.entropySeed[:], e)
 		hc.isValidBasic = true
 	}
 	if network && !hc.isValidNetwork {
@@ -141,11 +133,4 @@ func (hc *HostConfig) ParseProvisioningURLs() ([]*url.URL, error) {
 		return nil, fmt.Errorf("invalid config: %v", err)
 	}
 	return hc.provisioningURLs, nil
-}
-
-func (hc *HostConfig) ParseEntropySeed() (*[32]byte, error) {
-	if err := hc.Validate(false); err != nil {
-		return nil, fmt.Errorf("invalid config: %v", err)
-	}
-	return &hc.entropySeed, nil
 }

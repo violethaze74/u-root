@@ -190,17 +190,6 @@ func main() {
 	info("TXT self tests are not implementet yet.")
 	txtHostSuport := false
 
-	// Init RNG
-	rngDev := "/dev/urandom"
-	info("Writing seed to %s", rngDev)
-	seed, err := hostConfig.ParseEntropySeed()
-	if err != nil {
-		reboot("parse entropy seed: %v", err)
-	}
-	if err := ioutil.WriteFile(rngDev, seed[:], 0); err != nil {
-		reboot("failed to init RNG: %v", err)
-	}
-
 	//////////////////
 	// Load OS package
 	//////////////////
