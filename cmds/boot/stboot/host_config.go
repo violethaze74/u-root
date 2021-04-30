@@ -5,7 +5,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"net"
 	"net/url"
@@ -61,16 +60,24 @@ func (hc *HostConfig) Validate(network bool) error {
 	if network && !hc.isValidNetwork {
 		// identity is optional
 		if hc.ID != "" {
-			e, err := hex.DecodeString(hc.ID)
-			if err != nil || len(e) != 32 {
-				return fmt.Errorf("identity: 32 hex-encoded bytes expected")
+			if len(hc.ID) > 64 {
+				return fmt.Errorf("identity: too long, max. 64 characters!")
+			}
+			for _, c := range hc.ID {
+				if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9') && c != '-' && c != '_' {
+					return fmt.Errorf("identity: invalid char %c ", c)
+				}
 			}
 		}
 		// authentication is optional
 		if hc.Auth != "" {
-			e, err := hex.DecodeString(hc.Auth)
-			if err != nil || len(e) != 32 {
-				return fmt.Errorf("authentication: 32 hex-encoded bytes expected")
+			if len(hc.Auth) > 64 {
+				return fmt.Errorf("authentication: too long, max. 64 characters!")
+			}
+			for _, c := range hc.Auth {
+				if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9') && c != '-' && c != '_' {
+					return fmt.Errorf("authentication: invalid char %c ", c)
+				}
 			}
 		}
 		// absolute provisioning URLs
