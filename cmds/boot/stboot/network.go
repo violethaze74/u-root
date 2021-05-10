@@ -63,7 +63,7 @@ func configureStaticNetwork(hc *HostConfig) error {
 			continue
 		}
 
-		r := &netlink.Route{LinkIndex: link.Attrs().Index, Gw: gateway.IPNet.IP}
+		r := &netlink.Route{LinkIndex: link.Attrs().Index, Gw: *gateway}
 		if err = netlink.RouteAdd(r); err != nil {
 			debug("%s: IP config failed: %v", link.Attrs().Name, err)
 			continue

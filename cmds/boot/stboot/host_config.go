@@ -43,7 +43,7 @@ type HostConfig struct {
 	isValidNetwork bool
 
 	hostIP           *netlink.Addr
-	defaultGateway   *netlink.Addr
+	defaultGateway   *net.IP
 	provisioningURLs []*url.URL
 }
 
@@ -110,11 +110,11 @@ func (hc *HostConfig) Validate(network bool) error {
 				return fmt.Errorf("host ip: %v", err)
 			}
 			hc.hostIP = a
-			a, err = netlink.ParseAddr(hc.DefaultGateway)
-			if err != nil {
-				return fmt.Errorf("default gateway: %v", err)
+			g := net.ParseIP(hc.DefaultGateway)
+			if g == nil {
+				return fmt.Errorf("default gateway: valid textual representation: got %s want e.g. 192.0.2.1, 2001:db8::68, or ::ffff:192.0.2.1", hc.defaultGateway)
 			}
-			hc.defaultGateway = a
+			hc.defaultGateway = &g
 		}
 		hc.isValidNetwork = true
 	}
@@ -128,7 +128,7 @@ func (hc *HostConfig) ParseHostIP() (*netlink.Addr, error) {
 	return hc.hostIP, nil
 }
 
-func (hc *HostConfig) ParseDefaultGateway() (*netlink.Addr, error) {
+func (hc *HostConfig) ParseDefaultGateway() (*net.IP, error) {
 	if err := hc.Validate(true); err != nil {
 		return nil, fmt.Errorf("invalid config: %v", err)
 	}
