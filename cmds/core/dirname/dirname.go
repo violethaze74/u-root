@@ -9,17 +9,27 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 )
 
-func main() {
-	if len(os.Args) < 2 {
-		log.Fatalf("dirname: missing operand")
+func runDirname(w io.Writer, args []string) error {
+	if len(args) < 1 {
+		fmt.Fprintf(w, "%s\n", "dirname: missing operand")
+		return nil
 	}
+	for _, n := range args {
+		if _, err := fmt.Fprintf(w, "%s\n", filepath.Dir(n)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	for _, n := range os.Args[1:] {
-		fmt.Println(filepath.Dir(n))
+func main() {
+	if err := runDirname(os.Stdout, os.Args[1:]); err != nil {
+		log.Fatal(err)
 	}
 }
