@@ -149,39 +149,36 @@ func isRoot(dir string) (bool, error) {
 	return false, nil
 }
 
-func main() {
+func chroot(args ...string) (err error) {
 	var (
 		newRoot   string
 		isOldroot bool
-		err       error
 	)
 
-	flag.Parse()
-
-	if flag.NFlag() == 0 && flag.NArg() == 0 {
+	if flag.NFlag() == 0 && len(args) == 0 {
 		flag.PrintDefaults()
-		os.Exit(1)
+		return nil
 	}
 
-	newRoot, err = parseRoot(flag.Args())
+	newRoot, err = parseRoot(args)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	isOldroot, err = isRoot(newRoot)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if !skipchdirFlag {
 		err = os.Chdir(newRoot)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	} else if !isOldroot {
-		log.Fatal("The -s option is only permitted when newroot is the old / directory")
+		return fmt.Errorf("the -s option is only permitted when newroot is the old / directory")
 	}
 
-	argv := parseCommand(flag.Args())
+	argv := parseCommand(args)
 
 	cmd := exec.Command(argv[0], argv[1:]...)
 
@@ -196,6 +193,14 @@ func main() {
 	}
 
 	if err = cmd.Run(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func main() {
+	flag.Parse()
+	if err := chroot(flag.Args()...); err != nil {
 		log.Fatal(err)
 	}
 }
