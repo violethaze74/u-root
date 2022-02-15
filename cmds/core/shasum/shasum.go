@@ -9,27 +9,29 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"github.com/spf13/pflag"
 )
 
+var (
+	algorithm = pflag.IntP("algorithm", "a", 1, "SHA algorithm, valid args are 1 and 256")
+	help      = pflag.BoolP("help", "h", false, "Show this help and exit")
+)
+
+var usage = "Usage:\nshasum -a <algorithm> <File Name>"
+
 func helpPrinter() {
-	fmt.Printf("Usage:\nshasum -a <algorithm> <File Name>\n")
+	fmt.Println(usage)
 	pflag.PrintDefaults()
-	os.Exit(0)
 }
 
-func versionPrinter() {
-	fmt.Println("shasum utility, URoot Version.")
-	os.Exit(0)
-}
-
-func getInput(fileName string) (input []byte, err error) {
+func getInput(r io.Reader, fileName string) (input []byte, err error) {
 	if fileName != "" {
 		return os.ReadFile(fileName)
 	}
-	return io.ReadAll(os.Stdin)
+	return io.ReadAll(r)
 }
 
 //
@@ -37,51 +39,46 @@ func getInput(fileName string) (input []byte, err error) {
 // value of algorithm is expected to be 1 for SHA1
 // and 256 for SHA256
 //
-func shaPrinter(algorithm int, data []byte) string {
-	var sha string
-	if algorithm == 256 {
-		sha = fmt.Sprintf("%x", sha256.Sum256(data))
-	} else if algorithm == 1 {
-		sha = fmt.Sprintf("%x", sha1.Sum(data))
+func shaPrinter(w io.Writer, data []byte) error {
+	if *algorithm == 256 {
+		fmt.Fprintf(w, "%x", sha256.Sum256(data))
+	} else if *algorithm == 1 {
+		fmt.Fprintf(w, "%x", sha1.Sum(data))
 	} else {
-		fmt.Fprintf(os.Stderr, "Invalid algorithm")
-		return ""
+		return fmt.Errorf("invalid algorithm")
 	}
-	return sha
+	return nil
+}
+
+func shasum(w io.Writer, r io.Reader, args ...string) error {
+	cliArgs := ""
+
+	if *help {
+		helpPrinter()
+		return nil
+	}
+
+	if len(args) == 1 {
+		cliArgs = args[0]
+	}
+	input, err := getInput(r, cliArgs)
+	if err != nil {
+		return fmt.Errorf("error getting input")
+	}
+	if err := shaPrinter(w, input); err != nil {
+		return err
+	}
+	if cliArgs == "" {
+		fmt.Fprintf(w, " -\n")
+	} else {
+		fmt.Fprintf(w, " %s\n", cliArgs)
+	}
+	return nil
 }
 
 func main() {
-	var (
-		algorithm int
-		help      bool
-		version   bool
-	)
-	cliArgs := ""
-	pflag.IntVarP(&algorithm, "algorithm", "a", 1, "SHA algorithm, valid args are 1 and 256")
-	pflag.BoolVarP(&help, "help", "h", false, "Show this help and exit")
-	pflag.BoolVarP(&version, "version", "v", false, "Print Version")
 	pflag.Parse()
-
-	if help {
-		helpPrinter()
+	if err := shasum(os.Stdout, os.Stdin, pflag.Args()...); err != nil {
+		log.Fatal(err)
 	}
-
-	if version {
-		versionPrinter()
-	}
-	if len(pflag.Args()) == 1 {
-		cliArgs = pflag.Args()[0]
-	}
-	input, err := getInput(cliArgs)
-	if err != nil {
-		fmt.Println("Error getting input.")
-		os.Exit(-1)
-	}
-	fmt.Printf("%s ", shaPrinter(algorithm, input))
-	if cliArgs == "" {
-		fmt.Printf(" -\n")
-	} else {
-		fmt.Printf(" %s\n", cliArgs)
-	}
-	os.Exit(0)
 }
