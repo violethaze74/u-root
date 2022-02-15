@@ -43,7 +43,7 @@ func TestMd5Sum(t *testing.T) {
 		{
 			name: "bufIn as input",
 			args: []string{},
-			want: "8d777f385d3dfec8815d20f7496026dc \n",
+			want: "8d777f385d3dfec8815d20f7496026dc\n",
 		},
 		{
 			name: "wrong path file",

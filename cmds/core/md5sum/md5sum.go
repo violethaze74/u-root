@@ -22,61 +22,36 @@ var (
 
 var usage = "md5sum: md5sum <File Name>"
 
-func calculateMd5Sum(w io.Writer, fileName string, data []byte) (string, error) {
-	if len(data) > 0 {
-		_, err := fmt.Fprintf(w, "%x", md5.Sum(data))
-		if err != nil {
-			return "", err
-		}
-		return "", nil
-	}
-
-	fileDesc, err := os.Open(fileName)
-	if err != nil {
-		return "", err
-	}
-	defer fileDesc.Close()
-
-	md5Generator := md5.New()
-	if _, err := io.Copy(md5Generator, fileDesc); err != nil {
-		return "", err
-	}
-
-	_, err = fmt.Fprintf(w, "%x", md5Generator.Sum(nil))
-	if err != nil {
-		return "", err
-	}
-	return "", nil
-}
-
-func md5Sum(w io.Writer, r io.Reader, args ...string) error {
-	var (
-		input []byte
-		err   error
-	)
-
+func md5Sum(w io.Writer, r io.Reader, args ...string) (err error) {
 	if *help {
 		util.Usage(usage)
 		flag.Usage()
 		return nil
 	}
 
-	cliArgs := ""
+	fileName := ""
 	if len(args) >= 1 {
-		cliArgs = args[0]
+		fileName = args[0]
 	}
-	if cliArgs == "" {
-		input, err = io.ReadAll(r)
+	if fileName == "" {
+		input, err := io.ReadAll(r)
 		if err != nil {
 			fmt.Println("Error getting input.")
 			return err
 		}
+		fmt.Fprintf(w, "%x\n", md5.Sum(input))
+	} else {
+		fileDesc, err := os.Open(fileName)
+		if err != nil {
+			return err
+		}
+		defer fileDesc.Close()
+		h := md5.New()
+		if _, err := io.Copy(h, fileDesc); err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "%x %s\n", h.Sum(nil), fileName)
 	}
-	_, err = calculateMd5Sum(w, cliArgs, input)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(w, " %s\n", cliArgs)
 	return nil
 }
 
