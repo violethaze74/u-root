@@ -1,4 +1,4 @@
-FROM golang:1.13.5-alpine
+FROM golang:1.18.5-alpine
 
 ADD ad1d54f.diff /
 
