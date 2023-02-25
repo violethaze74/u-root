@@ -31,7 +31,7 @@ require (
 	github.com/vishvananda/netlink v1.1.1-0.20211118161826-650dca95af54
 	github.com/vtolstov/go-ioctl v0.0.0-20151206205506-6be9cced4810
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d
+	golang.org/x/sys v0.1.0
 	golang.org/x/term v0.0.0-20210916214954-140adaaadfaf
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.1
